@@ -92,6 +92,58 @@ type SearchResult struct {
 	Bonds		[]Bond		`json:"bonds"`
 }
 
+// StatusResponse holds parsed output from get_status.
+type StatusResponse struct {
+	Mesh			MeshStats			`json:"mesh"`
+	Services	ServiceHealth	`json:"services"`
+}
+
+type MeshStats struct {
+	Shards				int `json:"shards"`
+	Bonds					int `json:"bonds"`
+	Communities		int `json:"communities"`
+}
+
+type ServiceHealth struct {
+	Hub				string `json:"hub"`
+	Neo4j			string `json:"neo4j"`
+	Postgres	string `json:"postgres"`
+}
+
+// GetStatus calls the get_status tool and returns mesh health data.
+func (c *MCPClient) GetStatus() (*StatusResponse, error) {
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name: "get_status",
+	})
+	if err != nil {
+		return nil, resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return nil, fmt.Errorf("get_status error: %s", result.Content[0].Text)
+		}
+		return nil, fmt.Errorf("get_status returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return nil, fmt.Errorf("get_status returned empty response")
+	}
+
+	// Unlike search_all, the text content IS valid JSON — unmarshal directly
+	var status StatusResponse
+	if err := json.Unmarshal([]byte(result.Content[0].Text), &status); err != nil {
+		return nil, fmt.Errorf("failed to parse status JSON: %w", err)
+	}
+
+	return &status, nil
+}
+
 // --- The client ---
 
 // MCPClient holds connection state for a single MCP session.

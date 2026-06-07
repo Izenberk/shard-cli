@@ -71,3 +71,35 @@ func truncate(s string, maxLen int) string {
 	}
 	return s[:maxLen] + "..."
 }
+
+// RenderStatus formats status response for display.
+func (f *Formatter) RenderStatus(status *client.StatusResponse) string {
+	if f.AsJSON {
+		data, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
+			return fmt.Sprintf(`{"error": "%s"}`, err)
+		}
+		return string(data) + "\n"
+	}
+
+	var b strings.Builder
+
+	b.WriteString("MESH STATUS\n")
+	b.WriteString("─────────────────────────────\n")
+	b.WriteString(fmt.Sprintf("Shards      : %d\n", status.Mesh.Shards))
+	b.WriteString(fmt.Sprintf("Bonds       : %d\n", status.Mesh.Bonds))
+	b.WriteString(fmt.Sprintf("Communities : %d\n", status.Mesh.Communities))
+	b.WriteString("─────────────────────────────\n")
+	b.WriteString(fmt.Sprintf("Hub      : %s\n", statusIcon(status.Services.Hub)))
+	b.WriteString(fmt.Sprintf("Neo4j    : %s\n", statusIcon(status.Services.Neo4j)))
+	b.WriteString(fmt.Sprintf("Postgres : %s\n", statusIcon(status.Services.Postgres)))
+
+	return b.String()
+}
+
+func statusIcon(s string) string {
+	if s == "online" {
+		return "✅ online"
+	}
+	return "❌ " + s
+}
