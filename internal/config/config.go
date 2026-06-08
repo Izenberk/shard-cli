@@ -18,7 +18,7 @@ type Config struct {
 // but before any subcommand runs.
 func Load() (*Config, error) {
 	// Tier 4: hardcoded defaults
-	viper.SetDefault("hub_url", "https://hub.izenberk.com/mcp")
+	viper.SetDefault("hub_url", "http://localhost:3001/mcp")
 	viper.SetDefault("limit", 5)
 	viper.SetDefault("json", false)
 
