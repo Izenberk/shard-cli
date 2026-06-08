@@ -21,6 +21,15 @@ func (f *Formatter) RenderSearch(result *client.SearchResult) string {
 	return f.renderHuman(result)
 }
 
+// RenderSave formats save confirmation for display.
+func (f *Formatter) RenderSave(message string) string {
+	if f.AsJSON {
+		data, _ := json.Marshal(map[string]string{"status": message})
+		return string(data) + "\n"
+	}
+	return message + "\n"
+}
+
 // RenderError formats an error for stderr.
 func (f *Formatter) RenderError(err error) string {
 	return fmt.Sprintf("error: %s", err)
@@ -93,6 +102,57 @@ func (f *Formatter) RenderStatus(status *client.StatusResponse) string {
 	b.WriteString(fmt.Sprintf("Hub      : %s\n", statusIcon(status.Services.Hub)))
 	b.WriteString(fmt.Sprintf("Neo4j    : %s\n", statusIcon(status.Services.Neo4j)))
 	b.WriteString(fmt.Sprintf("Postgres : %s\n", statusIcon(status.Services.Postgres)))
+
+	return b.String()
+}
+
+// RenderShard formats a single shard for display (full content, no truncation).
+func (f *Formatter) RenderShard(shard *client.ShardDetail) string {
+	if f.AsJSON {
+		data, err := json.MarshalIndent(shard, "", "  ")
+		if err != nil {
+			return fmt.Sprintf(`{"error": "%s"}`, err)
+		}
+		return string(data) + "\n"
+	}
+
+	var b strings.Builder
+
+	b.WriteString(fmt.Sprintf("[%s] (%s)\n", shard.ID, shard.Category))
+	b.WriteString("─────────────────────────────────────\n")
+	b.WriteString(shard.Content)
+	b.WriteString("\n─────────────────────────────────────\n")
+	b.WriteString(fmt.Sprintf("Created : %s\n", shard.CreatedAt))
+	b.WriteString(fmt.Sprintf("Updated : %s\n", shard.UpdatedAt))
+
+	return b.String()
+}
+
+// RenderShards formats a list of shards for display.
+func (f *Formatter) RenderShards(shards []client.ShardDetail) string {
+	if f.AsJSON {
+		data, err := json.MarshalIndent(shards, "", "  ")
+		if err != nil {
+			return fmt.Sprintf(`{"error": "%s"}`, err)
+		}
+		return string(data) + "\n"
+	}
+
+	var b strings.Builder
+
+	b.WriteString(fmt.Sprintf("CORE SHARDS (%d)\n", len(shards)))
+	b.WriteString("─────────────────────────────────────\n\n")
+
+	if len(shards) == 0 {
+		b.WriteString("No core shards found.\n")
+		return b.String()
+	}
+
+	for _, shard := range shards {
+		b.WriteString(fmt.Sprintf("[%s]\n", shard.ID))
+		b.WriteString(truncate(shard.Content, 200))
+		b.WriteString("\n\n")
+	}
 
 	return b.String()
 }

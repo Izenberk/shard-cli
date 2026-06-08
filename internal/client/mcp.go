@@ -116,6 +116,9 @@ func (c *MCPClient) GetStatus() (*StatusResponse, error) {
 		Name: "get_status",
 	})
 	if err != nil {
+		return nil, fmt.Errorf("get_status request failed: %w", err)
+	}
+	if resp.Error != nil {
 		return nil, resp.Error
 	}
 
@@ -142,6 +145,137 @@ func (c *MCPClient) GetStatus() (*StatusResponse, error) {
 	}
 
 	return &status, nil
+}
+
+// ShardDetail represents a full shard returned by get_shard / get_core_shards.
+type ShardDetail struct {
+	ID        string `json:"id"`
+	Content   string `json:"content"`
+	Category  string `json:"category"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
+}
+
+// SaveInput holds the parameters for saving a memory shard.
+type SaveInput struct {
+	ID 					string `json:"id"`
+	Content 		string `json:"content"`
+	Category 		string `json:"category"`
+}
+
+// SaveMemory calls the save_memory tool and returns the confirmation message.
+func (c *MCPClient) SaveMemory(input SaveInput) (string, error) {
+	args := map[string]interface{}{
+		"id": 				input.ID,
+		"content":		input.Content,
+		"category":		input.Category,
+	}
+
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name:				"save_memory",
+		Arguments:	args,
+	})
+	if err != nil {
+		return "", fmt.Errorf("save_memory request failed: %w", err)
+	}
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return "", fmt.Errorf("save_memory error: %s", result.Content[0].Text)
+		}
+		return "", fmt.Errorf("save_memory returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return "saved (no confirmation from server)", nil
+	}
+
+	return result.Content[0].Text, nil
+}
+
+// GetShardByID calls the get_shard tool and returns a single shard.
+func (c *MCPClient) GetShardByID(id string) (*ShardDetail, error) {
+	args := map[string]interface{}{
+		"id": id,
+	}
+
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name:      "get_shard",
+		Arguments: args,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get_shard request failed: %w", err)
+	}
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return nil, fmt.Errorf("get_shard error: %s", result.Content[0].Text)
+		}
+		return nil, fmt.Errorf("get_shard returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return nil, fmt.Errorf("get_shard returned empty response")
+	}
+
+	var shard ShardDetail
+	if err := json.Unmarshal([]byte(result.Content[0].Text), &shard); err != nil {
+		return nil, fmt.Errorf("failed to parse shard JSON: %w", err)
+	}
+
+	return &shard, nil
+}
+
+// GetCoreShards calls the get_core_shards tool and returns all core shards.
+func (c *MCPClient) GetCoreShards() ([]ShardDetail, error) {
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name: "get_core_shards",
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get_core_shards request failed: %w", err)
+	}
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return nil, fmt.Errorf("get_core_shards error: %s", result.Content[0].Text)
+		}
+		return nil, fmt.Errorf("get_core_shards returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return nil, fmt.Errorf("get_core_shards returned empty response")
+	}
+
+	var shards []ShardDetail
+	if err := json.Unmarshal([]byte(result.Content[0].Text), &shards); err != nil {
+		return nil, fmt.Errorf("failed to parse core shards JSON: %w", err)
+	}
+
+	return shards, nil
 }
 
 // --- The client ---
