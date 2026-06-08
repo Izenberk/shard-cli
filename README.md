@@ -84,6 +84,13 @@ Communities : 8
 Hub      : ✅ online
 Neo4j    : ✅ online
 Postgres : ✅ online
+─────────────────────────────
+SURVIVAL
+  24h   ████░░░░░░░░░░░░░░░░ 14
+  7d    ████░░░░░░░░░░░░░░░░ 14
+  30d   ████████████████████ 61
+  90d   ░░░░░░░░░░░░░░░░░░░░ 0
+  older ░░░░░░░░░░░░░░░░░░░░ 0
 ```
 
 ### search
@@ -93,6 +100,7 @@ Semantic search across all memory engines (vector, text, graph mesh).
 ```bash
 shard search "authentication flow"
 shard search "MCP protocol" --limit 10
+shard search "config" --category core
 shard search "config" --json
 ```
 
@@ -100,6 +108,7 @@ shard search "config" --json
 |------|---------|-------------|
 | `--limit`, `-l` | 5 | Max results per engine |
 | `--bias` | 0.7 | Cognitive bias (0.0=centroid, 1.0=query) |
+| `--category`, `-c` | *(all)* | Filter by category (memory, session, core, contract) |
 
 ### save
 
@@ -148,6 +157,24 @@ These work with all commands:
 | `--hub-url` | MCP server URL |
 | `--api-key` | API key for authentication |
 | `--json` | Output as raw JSON (pipe-friendly) |
+
+## Shell Completion
+
+Generate completion scripts for your shell:
+
+```bash
+# Bash — add to ~/.bashrc or source directly
+shard completion bash > ~/.local/share/bash-completion/completions/shard
+
+# Zsh — add to your fpath (before compinit)
+shard completion zsh > "${fpath[1]}/_shard"
+
+# Fish
+shard completion fish > ~/.config/fish/completions/shard.fish
+
+# PowerShell
+shard completion powershell | Out-String | Invoke-Expression
+```
 
 ## Architecture
 
