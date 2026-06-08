@@ -3,6 +3,7 @@ shard
 
 # Guidelines (local reference only)
 GUIDELINE.md
+GUIDELINE-PHASE2.md
 
 # Environment
 .env
