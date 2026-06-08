@@ -64,6 +64,17 @@ Only two external dependencies — everything else uses standard library:
 - **cobra** — CLI subcommand framework
 - **viper** — config file + env var loading
 
+## Shard Categories
+
+When saving to Shard-Link (via CLI or `/shard` skill), always use the correct category:
+
+| Category | Purpose |
+|----------|---------|
+| `core` | Identity, preferences, long-term facts about the user |
+| `memory` | General knowledge, learnings, session notes (default for `shard save`) |
+| `session` | Ephemeral context tied to a specific work session |
+| `contract` | Hub-side change requests — specs for the hub agent to implement |
+
 ## Design Constraints
 
 - No LLM/Claude SDK — pure HTTP to MCP endpoints

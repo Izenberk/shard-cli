@@ -13,6 +13,9 @@ var statusCmd = &cobra.Command{
 	Use:		"status",
 	Short:	"Show mesh health",
 	Long:		"Display Shard-Link mesh statistics and service health.",
+	Example: `  shard status
+  shard status --json
+  shard status --hub-url https://my-hub.example.com/mcp`,
 	Args: 	cobra.NoArgs,
 	RunE: 	func(cmd *cobra.Command, args []string) error {
 		mcpClient, err := client.NewMCPClient(cfg.HubURL, cfg.APIKey)

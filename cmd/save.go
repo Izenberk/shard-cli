@@ -14,6 +14,14 @@ var saveCmd = &cobra.Command{
 	Use:   "save [content]",
 	Short: "Save to Shard-Link memory",
 	Long:  "Persist a memory shard from args, stdin pipe, or file.",
+	Example: `  # From argument
+  shard save "Learned about Go interfaces" --id til-interfaces
+
+  # From file
+  shard save --file notes.md --id meeting-notes --category session
+
+  # From stdin pipe
+  echo "piped content" | shard save --id piped-shard`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id, _ := cmd.Flags().GetString("id")
 		category, _ := cmd.Flags().GetString("category")

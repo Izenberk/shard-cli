@@ -94,8 +94,18 @@ type SearchResult struct {
 
 // StatusResponse holds parsed output from get_status.
 type StatusResponse struct {
-	Mesh			MeshStats			`json:"mesh"`
-	Services	ServiceHealth	`json:"services"`
+	Mesh     MeshStats            `json:"mesh"`
+	Services ServiceHealth        `json:"services"`
+	Survival SurvivalDistribution `json:"survival"`
+}
+
+// SurvivalDistribution holds bucketed shard age counts.
+type SurvivalDistribution struct {
+	Day24h int `json:"24h"`
+	Day7d  int `json:"7d"`
+	Day30d int `json:"30d"`
+	Day90d int `json:"90d"`
+	Older  int `json:"older"`
 }
 
 type MeshStats struct {
@@ -327,11 +337,14 @@ func NewMCPClient(endpoint, apiKey string) (*MCPClient, error) {
 }
 
 // SearchAll calls the search_all tool and returns parsed results.
-func (c *MCPClient) SearchAll(query string, limit int, bias float64) (*SearchResult, error) {
+func (c *MCPClient) SearchAll(query string, limit int, bias float64, category string) (*SearchResult, error) {
 	args := map[string]interface{}{
 		"query": query,
 		"limit": limit,
-		"bias": bias,
+		"bias":  bias,
+	}
+	if category != "" {
+		args["category"] = category
 	}
 
 	resp, err := c.sendRequest("tools/call", toolCallParams{

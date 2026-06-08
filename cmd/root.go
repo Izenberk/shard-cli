@@ -19,7 +19,16 @@ var (
 var rootCmd = &cobra.Command{
 	Use: 		"shard",
 	Short: 	"Terminal interface to Shard-Link",
-	Long:		"Query and manage your Shard-Link knowledge mesh from the command line.",
+	Long: `Query and manage your Shard-Link knowledge mesh from the command line.
+
+Configuration is resolved in order: CLI flags → environment variables → ~/.shard/config.yaml.
+
+Examples:
+  shard status                          # mesh health check
+  shard search "golang concurrency"     # semantic search
+  shard save "TIL: channels" --id til-1 # save a memory shard
+  shard get til-1                       # fetch shard by ID
+  shard get --core                      # list core identity shards`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Load config — this is where the three-tier chain resolves.
 		// Flags are already parsed by Cobra at this point.

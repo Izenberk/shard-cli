@@ -30,9 +30,45 @@ func (f *Formatter) RenderSave(message string) string {
 	return message + "\n"
 }
 
-// RenderError formats an error for stderr.
+// RenderError formats an error for stderr with actionable hints.
 func (f *Formatter) RenderError(err error) string {
-	return fmt.Sprintf("error: %s", err)
+	msg := err.Error()
+	hint := errorHint(msg)
+	if hint != "" {
+		return fmt.Sprintf("error: %s\n  → %s", msg, hint)
+	}
+	return fmt.Sprintf("error: %s", msg)
+}
+
+// errorHint returns an actionable suggestion based on common error patterns.
+func errorHint(msg string) string {
+	lower := strings.ToLower(msg)
+
+	switch {
+	case strings.Contains(lower, "connection refused") ||
+		strings.Contains(lower, "dial tcp") ||
+		strings.Contains(lower, "no such host"):
+		return "Is the Shard-Link hub running? Check hub_url in ~/.shard/config.yaml"
+
+	case strings.Contains(lower, "http 401") ||
+		strings.Contains(lower, "http 403") ||
+		strings.Contains(lower, "unauthorized") ||
+		strings.Contains(lower, "forbidden"):
+		return "Check your API key (--api-key, SHARD_API_KEY, or ~/.shard/config.yaml)"
+
+	case strings.Contains(lower, "timeout") ||
+		strings.Contains(lower, "deadline exceeded") ||
+		strings.Contains(lower, "context deadline"):
+		return "Hub is not responding. Check network or increase timeout"
+
+	case strings.Contains(lower, "http 404"):
+		return "Endpoint not found. Verify hub_url points to the MCP server path (e.g. /mcp)"
+
+	case strings.Contains(lower, "http 5"):
+		return "Hub returned a server error. Check hub logs for details"
+	}
+
+	return ""
 }
 
 func (f *Formatter) renderJSON(result *client.SearchResult) string {
@@ -102,6 +138,42 @@ func (f *Formatter) RenderStatus(status *client.StatusResponse) string {
 	b.WriteString(fmt.Sprintf("Hub      : %s\n", statusIcon(status.Services.Hub)))
 	b.WriteString(fmt.Sprintf("Neo4j    : %s\n", statusIcon(status.Services.Neo4j)))
 	b.WriteString(fmt.Sprintf("Postgres : %s\n", statusIcon(status.Services.Postgres)))
+
+	// Survival distribution histogram
+	s := status.Survival
+	if s.Day24h+s.Day7d+s.Day30d+s.Day90d+s.Older > 0 {
+		b.WriteString("─────────────────────────────\n")
+		b.WriteString("SURVIVAL\n")
+
+		buckets := []struct {
+			label string
+			count int
+		}{
+			{"24h  ", s.Day24h},
+			{"7d   ", s.Day7d},
+			{"30d  ", s.Day30d},
+			{"90d  ", s.Day90d},
+			{"older", s.Older},
+		}
+
+		// Find max for scaling bars
+		max := 0
+		for _, b := range buckets {
+			if b.count > max {
+				max = b.count
+			}
+		}
+
+		barWidth := 20
+		for _, bucket := range buckets {
+			width := 0
+			if max > 0 {
+				width = (bucket.count * barWidth) / max
+			}
+			bar := strings.Repeat("█", width) + strings.Repeat("░", barWidth-width)
+			b.WriteString(fmt.Sprintf("  %s %s %d\n", bucket.label, bar, bucket.count))
+		}
+	}
 
 	return b.String()
 }

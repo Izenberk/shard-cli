@@ -13,6 +13,9 @@ var getCmd = &cobra.Command{
 	Use:   "get [id]",
 	Short: "Fetch a shard by ID",
 	Long:  "Retrieve a single shard by exact ID, or all core shards with --core.",
+	Example: `  shard get my-shard-id
+  shard get my-shard-id --json
+  shard get --core`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		core, _ := cmd.Flags().GetBool("core")
 
