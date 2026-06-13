@@ -13,13 +13,14 @@ A pure Go terminal interface to [Shard-Link](https://github.com/Izenberk/shard-l
 git clone https://github.com/Izenberk/shard-cli.git
 cd shard-cli
 
-# Option A: build and install to GOPATH/bin
-go install .
-ln -s ~/go/bin/shard-cli ~/go/bin/shard
-
-# Option B: build and install system-wide
+# Build and install system-wide
 go build -o shard .
-sudo mv shard /usr/local/bin/shard
+sudo cp shard /usr/local/bin/shard
+
+# Generate shell completions (bash)
+mkdir -p ~/.local/share/bash-completion/completions
+shard completion bash > ~/.local/share/bash-completion/completions/shard
+source ~/.local/share/bash-completion/completions/shard
 ```
 
 Verify:
@@ -27,6 +28,8 @@ Verify:
 ```bash
 shard --help
 ```
+
+> **After upgrading:** rebuild with `go build -o shard .`, re-copy to `/usr/local/bin/`, and regenerate completions with the same `shard completion bash > ...` command. Source it or open a new terminal to pick up new commands.
 
 ## Configuration
 
@@ -226,21 +229,22 @@ These work with all commands:
 
 ## Shell Completion
 
-Generate completion scripts for your shell:
+Generate and load completion scripts for your shell:
 
 ```bash
-# Bash — add to ~/.bashrc or source directly
+# Bash
+mkdir -p ~/.local/share/bash-completion/completions
 shard completion bash > ~/.local/share/bash-completion/completions/shard
+source ~/.local/share/bash-completion/completions/shard
 
 # Zsh — add to your fpath (before compinit)
 shard completion zsh > "${fpath[1]}/_shard"
 
 # Fish
 shard completion fish > ~/.config/fish/completions/shard.fish
-
-# PowerShell
-shard completion powershell | Out-String | Invoke-Expression
 ```
+
+> **Note:** After upgrading shard-cli, regenerate completions and source them (or open a new terminal) to pick up new commands.
 
 ## Architecture
 
