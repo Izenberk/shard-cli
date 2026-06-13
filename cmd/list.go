@@ -19,7 +19,7 @@ Filters (mutually exclusive):
   --category     All shards in a specific category
   --at-risk      Shards below a survival score threshold`,
 	Example: `  shard list                              # recent shards (default)
-  shard list --recent --limit 20          # last 20 updated
+  shard list --limit 20                   # last 20 updated
   shard list --category session           # all session shards
   shard list --at-risk                    # eviction candidates
   shard list --at-risk --threshold 50     # shards scoring below 50
