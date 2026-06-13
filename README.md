@@ -148,6 +148,72 @@ shard get --core
 |------|-------------|
 | `--core` | Fetch all core identity shards |
 
+### list
+
+List shards using observation filters. Returns metadata only (no content — use `get` for full content).
+
+```bash
+# Recent shards (default)
+shard list
+shard list --limit 20
+
+# By category
+shard list --category session
+shard list --category contract --limit 50
+
+# At-risk shards (eviction candidates)
+shard list --at-risk
+shard list --at-risk --threshold 50
+
+# Pipe-friendly
+shard list --at-risk --json | jq '.[].id'
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--limit`, `-l` | 10 | Max results |
+| `--category`, `-c` | | Filter by category |
+| `--at-risk` | false | Show shards below survival threshold |
+| `--threshold` | 30 | Survival score threshold (with `--at-risk`) |
+
+### update
+
+Update an existing shard's content and/or category. Content changes trigger automatic re-embedding on the server.
+
+```bash
+# Update content
+shard update my-shard --content "updated notes"
+
+# Update from file
+shard update my-shard --file updated.md
+
+# Change category
+shard update my-shard --category session
+
+# Update core shard (requires confirmation)
+shard update core-identity --category memory --confirm-core
+```
+
+| Flag | Description |
+|------|-------------|
+| `--content` | New content (triggers re-embedding) |
+| `--category` | New category |
+| `--file`, `-f` | Read new content from file |
+| `--confirm-core` | Required to update core shards |
+
+### delete
+
+Permanently remove a shard and all its relationships.
+
+```bash
+shard delete my-old-shard
+shard delete core-identity --confirm-core
+```
+
+| Flag | Description |
+|------|-------------|
+| `--confirm-core` | Required to delete core shards |
+
 ## Global flags
 
 These work with all commands:

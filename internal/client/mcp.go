@@ -288,6 +288,181 @@ func (c *MCPClient) GetCoreShards() ([]ShardDetail, error) {
 	return shards, nil
 }
 
+// ShardMetadata represents metadata-only responses from observation tools.
+type ShardMetadata struct {
+	ID            string  `json:"id"`
+	Category      string  `json:"category"`
+	SurvivalScore float64 `json:"survival_score"`
+	CreatedAt     string  `json:"created_at"`
+	LastUsed      string  `json:"last_used"`
+}
+
+// GetRecentShards calls the get_recent_shards tool.
+func (c *MCPClient) GetRecentShards(limit int, category string) ([]ShardMetadata, error) {
+	args := map[string]interface{}{
+		"limit": limit,
+	}
+	if category != "" {
+		args["category"] = category
+	}
+
+	return c.callMetadataListTool("get_recent_shards", args)
+}
+
+// GetShardsByCategory calls the get_shards_by_category tool.
+func (c *MCPClient) GetShardsByCategory(category string, limit int) ([]ShardMetadata, error) {
+	args := map[string]interface{}{
+		"category": category,
+		"limit":    limit,
+	}
+
+	return c.callMetadataListTool("get_shards_by_category", args)
+}
+
+// GetAtRiskShards calls the get_at_risk_shards tool.
+func (c *MCPClient) GetAtRiskShards(limit int, threshold float64) ([]ShardMetadata, error) {
+	args := map[string]interface{}{
+		"limit":     limit,
+		"threshold": threshold,
+	}
+
+	return c.callMetadataListTool("get_at_risk_shards", args)
+}
+
+// callMetadataListTool is a shared helper for observation tools that return []ShardMetadata.
+func (c *MCPClient) callMetadataListTool(toolName string, args map[string]interface{}) ([]ShardMetadata, error) {
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name:      toolName,
+		Arguments: args,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("%s request failed: %w", toolName, err)
+	}
+	if resp.Error != nil {
+		return nil, resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return nil, fmt.Errorf("%s error: %s", toolName, result.Content[0].Text)
+		}
+		return nil, fmt.Errorf("%s returned an error", toolName)
+	}
+
+	if len(result.Content) == 0 {
+		return nil, nil
+	}
+
+	text := result.Content[0].Text
+	if text == "No shards found." || text == "No at-risk shards found below the threshold." {
+		return nil, nil
+	}
+
+	var shards []ShardMetadata
+	if err := json.Unmarshal([]byte(text), &shards); err != nil {
+		return nil, fmt.Errorf("failed to parse %s JSON: %w", toolName, err)
+	}
+
+	return shards, nil
+}
+
+// UpdateInput holds the parameters for updating a shard.
+type UpdateInput struct {
+	ID          string `json:"id"`
+	Content     string `json:"content,omitempty"`
+	Category    string `json:"category,omitempty"`
+	ConfirmCore bool   `json:"confirm_core,omitempty"`
+}
+
+// UpdateShard calls the update_shard tool.
+func (c *MCPClient) UpdateShard(input UpdateInput) (string, error) {
+	args := map[string]interface{}{
+		"id": input.ID,
+	}
+	if input.Content != "" {
+		args["content"] = input.Content
+	}
+	if input.Category != "" {
+		args["category"] = input.Category
+	}
+	if input.ConfirmCore {
+		args["confirm_core"] = true
+	}
+
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name:      "update_shard",
+		Arguments: args,
+	})
+	if err != nil {
+		return "", fmt.Errorf("update_shard request failed: %w", err)
+	}
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return "", fmt.Errorf("update_shard error: %s", result.Content[0].Text)
+		}
+		return "", fmt.Errorf("update_shard returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return "updated (no confirmation from server)", nil
+	}
+
+	return result.Content[0].Text, nil
+}
+
+// DeleteShard calls the delete_shard tool.
+func (c *MCPClient) DeleteShard(id string, confirmCore bool) (string, error) {
+	args := map[string]interface{}{
+		"id": id,
+	}
+	if confirmCore {
+		args["confirm_core"] = true
+	}
+
+	resp, err := c.sendRequest("tools/call", toolCallParams{
+		Name:      "delete_shard",
+		Arguments: args,
+	})
+	if err != nil {
+		return "", fmt.Errorf("delete_shard request failed: %w", err)
+	}
+	if resp.Error != nil {
+		return "", resp.Error
+	}
+
+	var result toolCallResult
+	if err := json.Unmarshal(resp.Result, &result); err != nil {
+		return "", fmt.Errorf("failed to parse tool result: %w", err)
+	}
+
+	if result.IsError {
+		if len(result.Content) > 0 {
+			return "", fmt.Errorf("delete_shard error: %s", result.Content[0].Text)
+		}
+		return "", fmt.Errorf("delete_shard returned an error")
+	}
+
+	if len(result.Content) == 0 {
+		return "deleted (no confirmation from server)", nil
+	}
+
+	return result.Content[0].Text, nil
+}
+
 // --- The client ---
 
 // MCPClient holds connection state for a single MCP session.

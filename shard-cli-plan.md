@@ -133,6 +133,16 @@ MCPClient
 
   → GetStatus()                 → HealthResponse
 
+  → GetRecentShards(limit, cat) → \[\]ShardMetadata
+
+  → GetShardsByCategory(cat)    → \[\]ShardMetadata
+
+  → GetAtRiskShards(limit, thr) → \[\]ShardMetadata
+
+  → UpdateShard(input)          → string (confirmation)
+
+  → DeleteShard(id, confirm)    → string (confirmation)
+
 No LLM. No Claude. Just HTTP to your existing MCP endpoints.
 
 ### internal/config/config.go
@@ -250,7 +260,15 @@ Phase 4 — Working get command
 
   → fetch core shards
 
-Phase 5 — Polish
+Phase 5 — Observation + CRUD commands
+
+  → shard list (--recent, --category, --at-risk)
+
+  → shard update (--content, --category, --file, --confirm-core)
+
+  → shard delete (--confirm-core)
+
+Phase 6 — Polish
 
   → shell completion (cobra built-in)
 
@@ -297,4 +315,4 @@ shard get "decision-merge-idempotency-2026-06"  \# exact fetch
 
 ---
 
-*Plan drafted: 2026-06-01 | Status: Parked — read when ready to build*  
+*Plan drafted: 2026-06-01 | Phase 5 implemented: 2026-06-13 | Status: Phase 6 — Polish*  

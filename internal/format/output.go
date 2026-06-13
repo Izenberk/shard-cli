@@ -229,6 +229,52 @@ func (f *Formatter) RenderShards(shards []client.ShardDetail) string {
 	return b.String()
 }
 
+// RenderMetadataList formats observation tool results (list command).
+func (f *Formatter) RenderMetadataList(shards []client.ShardMetadata, title string) string {
+	if f.AsJSON {
+		data, err := json.MarshalIndent(shards, "", "  ")
+		if err != nil {
+			return fmt.Sprintf(`{"error": "%s"}`, err)
+		}
+		return string(data) + "\n"
+	}
+
+	var b strings.Builder
+
+	count := len(shards)
+	b.WriteString(fmt.Sprintf("%s (%d)\n", title, count))
+	b.WriteString("─────────────────────────────────────\n")
+
+	if count == 0 {
+		b.WriteString("No shards found.\n")
+		return b.String()
+	}
+
+	for _, s := range shards {
+		b.WriteString(fmt.Sprintf("[%s] (%s)  survival: %.1f\n", s.ID, s.Category, s.SurvivalScore))
+		b.WriteString(fmt.Sprintf("  last used: %s\n\n", formatTime(s.LastUsed)))
+	}
+
+	return b.String()
+}
+
+// RenderMutation formats update/delete confirmation for display.
+func (f *Formatter) RenderMutation(message string) string {
+	if f.AsJSON {
+		data, _ := json.Marshal(map[string]string{"status": message})
+		return string(data) + "\n"
+	}
+	return message + "\n"
+}
+
+// formatTime trims RFC3339 timestamps to a readable short form.
+func formatTime(t string) string {
+	if len(t) > 19 {
+		return t[:19]
+	}
+	return t
+}
+
 func statusIcon(s string) string {
 	if s == "online" {
 		return "✅ online"

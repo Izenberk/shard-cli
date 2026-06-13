@@ -38,7 +38,7 @@ Each layer depends only on layers below it and is testable in isolation.
 | Layer | Package | Role |
 |-------|---------|------|
 | 1 — Config | `internal/config/` | Loads settings from CLI flags → env vars → `~/.shard/config.yaml` (priority order). Zero deps. |
-| 2 — Client | `internal/client/` | `MCPClient` — HTTP client to the MCP server. Methods: `SearchAll`, `SaveMemory`, `GetCoreShards`, `GetShardByID`, `GetStatus`. Core of the entire CLI. |
+| 2 — Client | `internal/client/` | `MCPClient` — HTTP client to the MCP server. Methods: `SearchAll`, `SaveMemory`, `GetCoreShards`, `GetShardByID`, `GetStatus`, `GetRecentShards`, `GetShardsByCategory`, `GetAtRiskShards`, `UpdateShard`, `DeleteShard`. Core of the entire CLI. |
 | 3 — Format | `internal/format/` | Terminal output rendering. Two modes: human-readable (default) and `--json` (pipe-friendly). |
 | 4 — Commands | `cmd/` | Cobra commands wiring the above layers. `root.go` defines global flags; each subcommand gets its own file. |
 
@@ -50,6 +50,9 @@ Entry point: `main.go` → `cmd.Execute()`.
 - `shard search "query"` — semantic memory search (`--limit`, `--category`, `--json`)
 - `shard save "content"` — persist memory from args, stdin pipe, or `--file` (`--id`, `--category`)
 - `shard get "id"` — fetch shard by ID or `--core` for core shards
+- `shard list` — list shards by filter: `--recent` (default), `--category`, `--at-risk` (`--limit`, `--threshold`)
+- `shard update "id"` — update content/category (`--content`, `--category`, `--file`, `--confirm-core`)
+- `shard delete "id"` — permanently delete a shard (`--confirm-core` for core shards)
 
 ### Config Precedence
 
